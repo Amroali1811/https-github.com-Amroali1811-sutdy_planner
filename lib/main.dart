@@ -23,6 +23,34 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  // LOGIC: goals data
+  List<Map<String, dynamic>> goals = [
+    {'subject': 'Math', 'hours': 4, 'done': false},
+    {'subject': 'Physics', 'hours': 3, 'done': false},
+    {'subject': 'Programming', 'hours': 5, 'done': false},
+  ];
+
+  // LOGIC: toggle done / not done
+  void toggleGoal(int index) {
+    setState(() {
+      goals[index]['done'] = !goals[index]['done'];
+    });
+  }
+
+  // LOGIC: delete a goal
+  void deleteGoal(int index) {
+    setState(() {
+      goals.removeAt(index);
+    });
+  }
+
+  // LOGIC: add a sample goal
+  void addSampleGoal() {
+    setState(() {
+      goals.add({'subject': 'New Goal', 'hours': 2, 'done': false});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -37,31 +65,44 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Text('My Goals', style: TextStyle(fontSize: 22)),
           ),
 
-          // STATIC: hard-coded goal cards
-          Card(
-            child: ListTile(
-              title: const Text('Math'),
-              subtitle: const Text('4 hours'),
-            ),
-          ),
-          Card(
-            child: ListTile(
-              title: const Text('Physics'),
-              subtitle: const Text('3 hours'),
-            ),
-          ),
-          Card(
-            child: ListTile(
-              title: const Text('Programming'),
-              subtitle: const Text('5 hours'),
+          // STATIC: list layout, items are built from the goals data
+          Expanded(
+            child: ListView.builder(
+              itemCount: goals.length,
+              itemBuilder: (context, index) {
+                final goal = goals[index];
+                return Card(
+                  child: ListTile(
+                    // CONNECTION 1: tapping the tile or checkbox calls toggleGoal
+                    onTap: () => toggleGoal(index),
+                    leading: Checkbox(
+                      value: goal['done'],
+                      onChanged: (value) => toggleGoal(index),
+                    ),
+                    title: Text(
+                      goal['subject'],
+                      style: TextStyle(
+                        decoration:
+                            goal['done'] ? TextDecoration.lineThrough : null,
+                      ),
+                    ),
+                    subtitle: Text('${goal['hours']} hours'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete),
+                      // CONNECTION 2: delete button calls deleteGoal
+                      onPressed: () => deleteGoal(index),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
       ),
 
-      // STATIC: add button (does nothing yet)
+      // STATIC: add button, adds a sample goal for now
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: addSampleGoal,
         child: const Icon(Icons.add),
       ),
     );
