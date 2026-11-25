@@ -30,6 +30,15 @@ class _HomeScreenState extends State<HomeScreen> {
     {'subject': 'Programming', 'hours': 5, 'done': false},
   ];
 
+  // LOGIC: statistics (getters), recalculated every time the screen rebuilds
+  int get totalHours =>
+      goals.fold(0, (sum, goal) => sum + (goal['hours'] as int));
+
+  int get completedCount =>
+      goals.where((goal) => goal['done'] == true).length;
+
+  int get remainingCount => goals.length - completedCount;
+
   // LOGIC: toggle done / not done
   void toggleGoal(int index) {
     setState(() {
@@ -59,43 +68,79 @@ class _HomeScreenState extends State<HomeScreen> {
 
       body: Column(
         children: [
+          // STATIC: summary row with three equal cards
+          // CONNECTION 3: the cards read values from the LOGIC getters
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: SummaryCard(
+                    title: 'Total hours',
+                    value: totalHours,
+                  ),
+                ),
+                Expanded(
+                  child: SummaryCard(
+                    title: 'Completed',
+                    value: completedCount,
+                  ),
+                ),
+                Expanded(
+                  child: SummaryCard(
+                    title: 'Remaining',
+                    value: remainingCount,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           // STATIC: heading above the list
           const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(8),
             child: Text('My Goals', style: TextStyle(fontSize: 22)),
           ),
 
-          // STATIC: list layout, items are built from the goals data
+          // STATIC: empty message OR the list built from the goals data
           Expanded(
-            child: ListView.builder(
-              itemCount: goals.length,
-              itemBuilder: (context, index) {
-                final goal = goals[index];
-                return Card(
-                  child: ListTile(
-                    // CONNECTION 1: tapping the tile or checkbox calls toggleGoal
-                    onTap: () => toggleGoal(index),
-                    leading: Checkbox(
-                      value: goal['done'],
-                      onChanged: (value) => toggleGoal(index),
+            child: goals.isEmpty
+                ? const Center(
+                    child: Text(
+                      'No goals yet. Tap + to add one!',
+                      style: TextStyle(fontSize: 16),
                     ),
-                    title: Text(
-                      goal['subject'],
-                      style: TextStyle(
-                        decoration:
-                            goal['done'] ? TextDecoration.lineThrough : null,
-                      ),
-                    ),
-                    subtitle: Text('${goal['hours']} hours'),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      // CONNECTION 2: delete button calls deleteGoal
-                      onPressed: () => deleteGoal(index),
-                    ),
+                  )
+                : ListView.builder(
+                    itemCount: goals.length,
+                    itemBuilder: (context, index) {
+                      final goal = goals[index];
+                      return Card(
+                        child: ListTile(
+                          // CONNECTION 1: tap or checkbox calls toggleGoal
+                          onTap: () => toggleGoal(index),
+                          leading: Checkbox(
+                            value: goal['done'],
+                            onChanged: (value) => toggleGoal(index),
+                          ),
+                          title: Text(
+                            goal['subject'],
+                            style: TextStyle(
+                              decoration: goal['done']
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                            ),
+                          ),
+                          subtitle: Text('${goal['hours']} hours'),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete),
+                            // CONNECTION 2: delete button calls deleteGoal
+                            onPressed: () => deleteGoal(index),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -104,6 +149,37 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: addSampleGoal,
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+}
+
+// STATIC: ONE reusable card widget, used three times in the summary row
+class SummaryCard extends StatelessWidget {
+  final String title;
+  final int value;
+
+  const SummaryCard({
+    super.key,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        child: Column(
+          children: [
+            Text(
+              '$value',
+              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4),
+            Text(title, textAlign: TextAlign.center),
+          ],
+        ),
       ),
     );
   }
