@@ -53,11 +53,22 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // LOGIC: add a sample goal
-  void addSampleGoal() {
+  // LOGIC: add a goal to the list
+  void addGoal(Map<String, dynamic> goal) {
     setState(() {
-      goals.add({'subject': 'New Goal', 'hours': 2, 'done': false});
+      goals.add(goal);
     });
+  }
+
+  // LOGIC: open the add screen, wait for the result, ignore it if user pressed back
+  Future<void> openAddScreen() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddGoalScreen()),
+    );
+    if (result != null) {
+      addGoal(result);
+    }
   }
 
   @override
@@ -145,9 +156,10 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
 
-      // STATIC: add button, adds a sample goal for now
+      // STATIC: add button, opens the second screen
+      // CONNECTION 4: the button calls openAddScreen
       floatingActionButton: FloatingActionButton(
-        onPressed: addSampleGoal,
+        onPressed: openAddScreen,
         child: const Icon(Icons.add),
       ),
     );
@@ -178,6 +190,105 @@ class SummaryCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(title, textAlign: TextAlign.center),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ===================== SECOND SCREEN =====================
+
+class AddGoalScreen extends StatefulWidget {
+  const AddGoalScreen({super.key});
+
+  @override
+  State<AddGoalScreen> createState() => _AddGoalScreenState();
+}
+
+class _AddGoalScreenState extends State<AddGoalScreen> {
+  // LOGIC: controllers read what the user typed
+  final TextEditingController subjectController = TextEditingController();
+  final TextEditingController hoursController = TextEditingController();
+
+  // LOGIC: error messages (null means no error)
+  String? subjectError;
+  String? hoursError;
+
+  // LOGIC: validate the input, then send the new goal back with Navigator.pop
+  void saveGoal() {
+    final subject = subjectController.text.trim();
+    final hours = int.tryParse(hoursController.text.trim());
+
+    setState(() {
+      subjectError = subject.isEmpty ? 'Subject cannot be empty' : null;
+      hoursError = (hours == null || hours <= 0)
+          ? 'Hours must be a number greater than 0'
+          : null;
+    });
+
+    // stop here if anything is invalid
+    if (subjectError != null || hoursError != null) {
+      return;
+    }
+
+    Navigator.pop(context, {
+      'subject': subject,
+      'hours': hours,
+      'done': false,
+    });
+  }
+
+  // LOGIC: free the controllers when the screen closes
+  @override
+  void dispose() {
+    subjectController.dispose();
+    hoursController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      // STATIC: app bar of the second screen
+      appBar: AppBar(title: const Text('Add Goal')),
+
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // STATIC: subject field
+            TextField(
+              controller: subjectController,
+              decoration: InputDecoration(
+                labelText: 'Subject',
+                errorText: subjectError,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // STATIC: hours field (numbers only keyboard)
+            TextField(
+              controller: hoursController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: 'Hours',
+                errorText: hoursError,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // STATIC: save button
+            // CONNECTION 5: the button calls saveGoal
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: saveGoal,
+                child: const Text('Save'),
+              ),
+            ),
           ],
         ),
       ),
